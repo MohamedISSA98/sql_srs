@@ -4,6 +4,24 @@ import duckdb
 import streamlit as st
 
 
+def check_user_solution(con, solution, query: str) -> None:
+    """
+    Checks that user SQL query is correct.
+    """
+    result = con.execute(query).df()
+    st.dataframe(result)
+
+    try:
+        result = result[solution.columns]
+        st.dataframe(result.compare(solution))
+    except KeyError as e:
+        st.write("Some columns are missing")
+
+    n_lines_diff = result.shape[0] - solution.shape[0]
+    if n_lines_diff != 0:
+        st.write(f"result has {n_lines_diff} lines difference with solution")
+
+
 if "data" not in os.listdir():
     logging.error(os.listdir())
     logging.error("creating folder data")
@@ -49,19 +67,10 @@ with st.sidebar:
 
 st.header("enter your code:")
 query = st.text_area(label="Votre code SQL ici", key="user_input")
+
+
 if query:
-    result = con.execute(query).df()
-    st.dataframe(result)
-
-    try:
-        result = result[solution.columns]
-        st.dataframe(result.compare(solution))
-    except KeyError as e:
-        st.write("Some columns are missing")
-
-    n_lines_diff = result.shape[0] - solution.shape[0]
-    if n_lines_diff != 0:
-        st.write(f"result has {n_lines_diff} lines difference with solution")
+    check_user_solution(con, solution, query)
 
 
 tab2, tab3 = st.tabs(["Tables", "Solutions"])
